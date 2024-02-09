@@ -13,8 +13,19 @@ app.post('/webhook', async (req, res) => {
   const payload = req.body;
 
   const webhooks = JSON.parse(process.env.WEBHOOK_JSON);
-  payload.whAction = webhooks[githubEvent];
-  payload.issues = payload.pull_request.title.split(']')[0].split('[')[1].split('/');
+  const whAction = webhooks[githubEvent]
+  if (whAction == undefined){
+    res.status(404).json({"msg":'Evento não mapeado'});
+    return
+  }
+  try {
+    payload.issues = payload.pull_request.title.split(']')[0].split('[')[1].split('/');
+  } catch (error) {
+    console.log('O titulo da pull request não possui o padrão de tarefa', payload.pull_request.title);
+    res.status(200).json({"msg": 'O titulo da pull request não possui o padrão de tarefa'});
+    return 
+  }
+ 
 
   await sendRequestToWebhook(payload)
     .then(() => {
