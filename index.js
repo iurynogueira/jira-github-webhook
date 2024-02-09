@@ -19,11 +19,11 @@ app.post('/webhook', async (req, res) => {
   await sendRequestToWebhook(payload)
     .then(() => {
       console.log('Requisição para o webhook realizada com sucesso!');
-      res.status(200).send('Webhook recebido com sucesso!');
+      res.status(200).json({"msg": 'Webhook recebido com sucesso!'});
     })
     .catch((error) => {
       console.error('Erro ao realizar a requisição para o webhook:', error.message);
-      res.status(500).send('Erro ao processar o webhook');
+      res.status(500).json({"msg":'Erro ao processar o webhook'});
     });
 });
 
