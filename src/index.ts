@@ -3,6 +3,7 @@ require('dotenv').config();
 import axios from 'axios';
 import bodyParser from 'body-parser';
 import express from 'express';
+import { config } from './config';
 
 const app = express();
 const port = 8080;
@@ -14,22 +15,28 @@ interface PayloadToJira {
 
 interface GHPayload extends PayloadToJira {
   pull_request: any;
+  repository: {
+    id: number;
+    name: string;
+    full_name: string;
+  }
 }
 
 app.use(bodyParser.json());
 
 app.post('/webhook', async (req: express.Request, res: express.Response) => {
-  const githubEvent = req.headers['x-github-event'];
+  const githubEvent = req.headers['x-github-event'] as string;
   const payload = req.body as GHPayload;
 
-  const webhooks = JSON.parse(process.env.WEBHOOK_JSON!);
-  payload.whAction = webhooks[githubEvent as string];
+  const webhookProject = config[payload.repository.full_name];
+  payload.whAction = webhookProject[githubEvent];
 
   if (payload.pull_request) {
-    payload.issues = payload.pull_request.title.split(']')[0].split('[')[1].split('/');
+    payload.issues = getTasksName(payload.pull_request.title); 
   }
 
-  await sendRequestToWebhook(payload)
+  if (payload.whAction) {
+    await sendRequestToWebhook(payload)
     .then(() => {
       console.log('Requisição para o webhook realizada com sucesso!');
       res.status(200).send('Webhook recebido com sucesso!');
@@ -38,6 +45,7 @@ app.post('/webhook', async (req: express.Request, res: express.Response) => {
       console.error('Erro ao realizar a requisição para o webhook:', error.message);
       res.status(500).send('Erro ao processar o webhook');
     });
+  }
 });
 
 app.listen(port, () => {
@@ -56,4 +64,8 @@ async function sendRequestToWebhook(payload: PayloadToJira) {
   } catch (error) {
     throw error;
   }
+}
+
+function getTasksName(PRTitle: string): string[] {
+  return PRTitle.split(']')[0].split('[')[1].split('/')
 }
