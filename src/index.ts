@@ -9,21 +9,21 @@ const port = 8080;
 
 interface PayloadToJira {
   whAction: string;
+  issues: string[];
 }
 
 interface GHPayload extends PayloadToJira {
   pull_request: any;
-  issues: unknown[];
 }
 
 app.use(bodyParser.json());
 
-app.post('/webhook', async (req: any, res: any) => {
+app.post('/webhook', async (req: express.Request, res: express.Response) => {
   const githubEvent = req.headers['x-github-event'];
   const payload = req.body as GHPayload;
 
   const webhooks = JSON.parse(process.env.WEBHOOK_JSON!);
-  payload.whAction = webhooks[githubEvent];
+  payload.whAction = webhooks[githubEvent as string];
 
   if (payload.pull_request) {
     payload.issues = payload.pull_request.title.split(']')[0].split('[')[1].split('/');
