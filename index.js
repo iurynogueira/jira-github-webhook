@@ -14,7 +14,10 @@ app.post('/webhook', async (req, res) => {
 
   const webhooks = JSON.parse(process.env.WEBHOOK_JSON);
   payload.whAction = webhooks[githubEvent];
-  payload.issues = payload.pull_request.title.split(']')[0].split('[')[1].split('/');
+
+  if (payload.pull_request) {
+    payload.issues = payload.pull_request.title.split(']')[0].split('[')[1].split('/');
+  }
 
   await sendRequestToWebhook(payload)
     .then(() => {
