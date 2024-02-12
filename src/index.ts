@@ -1,18 +1,28 @@
 require('dotenv').config();
-const express = require('express');
-const bodyParser = require('body-parser');
-const axios = require('axios');
+
+import axios from 'axios';
+import bodyParser from 'body-parser';
+import express from 'express';
 
 const app = express();
 const port = 8080;
 
+interface PayloadToJira {
+  whAction: string;
+}
+
+interface GHPayload extends PayloadToJira {
+  pull_request: any;
+  issues: unknown[];
+}
+
 app.use(bodyParser.json());
 
-app.post('/webhook', async (req, res) => {
+app.post('/webhook', async (req: any, res: any) => {
   const githubEvent = req.headers['x-github-event'];
-  const payload = req.body;
+  const payload = req.body as GHPayload;
 
-  const webhooks = JSON.parse(process.env.WEBHOOK_JSON);
+  const webhooks = JSON.parse(process.env.WEBHOOK_JSON!);
   payload.whAction = webhooks[githubEvent];
 
   if (payload.pull_request) {
@@ -34,7 +44,7 @@ app.listen(port, () => {
   console.log(`Servidor iniciado em http://localhost:${port}`);
 });
 
-async function sendRequestToWebhook(payload) {
+async function sendRequestToWebhook(payload: PayloadToJira) {
   const webhookURL = `https://automation.atlassian.com/pro/hooks/${payload.whAction}`;
 
   try {
